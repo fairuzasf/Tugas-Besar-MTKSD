@@ -31,7 +31,52 @@ fprintf('Max selisih std Z dari 1 : %.2e\n', max(abs(stddv_Z - 1)));
 fprintf('Min nilai Z : %.4f\n', min(Z(:)));
 fprintf('Max nilai Z : %.4f\n', max(Z(:)));
 
-%% Bagian 2
+%% Bagian 2 
+% SVD Penuh dan Analisis Spektrum Singular Value
+fprintf('\nBAGIAN 2: SVD Penuh dan Rank Efektif\n');
+
+% Melakukan SVD Penuh pada matriks Z (yang sudah distandarisasi)
+[U, S, V] = svd(Z);
+
+% Mengambil nilai singular dari matriks diagonal S
+singular_values = diag(S);
+
+% Menghitung energi kumulatif
+% Energi dalam konteks ini dihitung dari kuadrat singular value (varians)
+energy = singular_values .^ 2;
+total_energy = sum(energy);
+cumulative_energy = cumsum(energy) / total_energy;
+
+% Menentukan rank efektif k (energi kumulatif >= 95%)
+k = find(cumulative_energy >= 0.95, 1);
+
+% Menampilkan hasil
+fprintf('Jumlah total singular value: %d\n', length(singular_values));
+fprintf('Rank efektif k untuk energi kumulatif >= 95%% adalah: %d\n', k);
+fprintf('Total persentase energi yang dipertahankan pada k = %d adalah: %.2f%%\n', k, cumulative_energy(k) * 100);
+
+% Visualisasi Spektrum dan Energi Kumulatif
+figure('Name', 'Analisis SVD', 'NumberTitle', 'off');
+
+% Plot 1: Spektrum Singular Value
+subplot(1, 2, 1);
+plot(1:length(singular_values), singular_values, 'b-o', 'MarkerSize', 4, 'LineWidth', 1.2);
+title('Spektrum Singular Value');
+xlabel('Indeks Singular Value');
+ylabel('Nilai Singular (\sigma)');
+grid on;
+
+% Plot 2: Energi Kumulatif
+subplot(1, 2, 2);
+plot(1:length(cumulative_energy), cumulative_energy * 100, 'r-x', 'LineWidth', 1.2);
+hold on;
+yline(95, 'k--', 'Batas 95%', 'LineWidth', 1.5);
+xline(k, 'k--', sprintf('k = %d', k), 'LineWidth', 1.5, 'LabelVerticalAlignment', 'bottom');
+title('Energi Kumulatif');
+xlabel('Jumlah Komponen Utama (k)');
+ylabel('Energi Kumulatif (%)');
+grid on;
+hold off;
 
 %% Bagian 3
 
