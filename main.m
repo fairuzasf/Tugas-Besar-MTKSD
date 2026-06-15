@@ -161,6 +161,29 @@ title('Mode Fitur v1');
 grid on;
 
 %% Bagian 3 
+% Rekonstruksi Matriks dengan Rank Tereduksi
+fprintf('\nBAGIAN 3: Rekonstruksi Matriks (k = 3, 5, 10, 20)\n');
+
+% Daftar nilai k yang akan dievaluasi
+k_values = [3, 5, 10, 20];
+errors = zeros(length(k_values), 1);
+
+% Rumus: Akar dari jumlah kuadrat seluruh elemen matriks
+kuadrat_Z = Z .^ 2;
+jumlah_kuadrat_Z = sum(sum(kuadrat_Z)); % menjumlahkan semua elemen baris dan kolom
+norm_Z_manual = sqrt(jumlah_kuadrat_Z);
+
+for i = 1:length(k_values)
+    k_val = k_values(i);
+
+    % Mengambil k kolom/baris pertama dari U, S, dan V
+    Uk = U(:, 1:k_val);
+    Sk = S(1:k_val, 1:k_val);
+    Vk = V(:, 1:k_val);
+
+    % Rekonstruksi matriks tereduksi (Z_k)
+    Zk = Uk * Sk * Vk';
+
 
 
 %% Bagian 4
