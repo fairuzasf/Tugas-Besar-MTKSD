@@ -183,8 +183,31 @@ for i = 1:length(k_values)
 
     % Rekonstruksi matriks tereduksi (Z_k)
     Zk = Uk * Sk * Vk';
+    
+    % 2. Menghitung relative reconstruction error 
+    % Menghitung matriks selisih (Z - Zk)
+    matriks_selisih = Z - Zk;
 
+    % Menghitung Frobenius norm dari matriks selisih
+    kuadrat_selisih = matriks_selisih .^ 2;
+    jumlah_kuadrat_selisih = sum(sum(kuadrat_selisih));
+    norm_selisih_manual = sqrt(jumlah_kuadrat_selisih);
 
+    % Menghitung error relatif: ||Z - Z_k||_F / ||Z||_F
+    rel_error = norm_selisih_manual / norm_Z_manual;
+    errors(i) = rel_error;
+
+    fprintf('Relative reconstruction error untuk k = %2d: %.4f (%.2f%%)\n', k_val, rel_error, rel_error * 100);
+end
+
+% Visualisasi Error Rekonstruksi 
+figure('Name', 'Reconstruction Error', 'NumberTitle', 'off');
+plot(k_values, errors * 100, 'b-o', 'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', 'r');
+title('Relative Reconstruction Error vs k');
+xlabel('Nilai k (Rank Tereduksi)');
+ylabel('Relative Error (%)');
+xticks(k_values);
+grid on;
 
 %% Bagian 4
 
