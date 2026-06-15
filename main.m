@@ -30,3 +30,15 @@ fprintf('Max nilai absolut mean Z : %.2e\n', max(abs(mean_Z)));
 fprintf('Max selisih std Z dari 1 : %.2e\n', max(abs(stddv_Z - 1)));
 fprintf('Min nilai Z : %.4f\n', min(Z(:)));
 fprintf('Max nilai Z : %.4f\n', max(Z(:)));
+
+%% Bagian 2
+
+%% Bagian 3
+
+%% Bagian 4
+
+%% Bagian 5
+
+%% Bagian 6
+
+%% Bagian 7
