@@ -58,6 +58,108 @@ fprintf('Cek V x V = I : max error = %.2e\n', err_V);
 % Mengambil nilai singular dari diagonal matriks S
 sv = diag(S);
 
+% Menghitung energi tiap komponen
+energi = sv .^ 2;
+total_energi = (ones(1, length(sv)) * energi);
+energi_prop = energi / total_energi; % proporsi energi tiap komponen
+energi_kum = cumsum(energi_prop); % energi kumulatif
+
+% Menampilkan 10 nilai singular terbesar
+fprintf('10 Nilai Singular Terbesar:\n');
+fprintf('  i  |  sigma_i  |  Energi(%%)  |  Kumulatif(%%)\n');
+fprintf('-----|-----------|------------|-------------\n');
+for i = 1:10
+    fprintf('  %2d | %9.4f | %10.4f | %11.4f\n', ...
+        i, sv(i), energi_prop(i)*100, energi_kum(i)*100);
+end
+
+% Dekomposisi rank-1: Z = sigma1*u1*v1' + sigma2*u2*v2' + ...
+fprintf('Dekomposisi Rank-1 (20 komponen pertama):\n');
+fprintf('  i  |  sigma_i  |  Error sisa\n');
+fprintf('-----|-----------|------------\n');
+
+Z_approx = zeros(m, n); % matriks akumulasi komponen rank-1
+for i = 1:20
+    % Menambahkan komponen rank-1 ke-i
+    komponen_i = S(i,i) * U(:,i) * V(:,i)';
+    Z_approx = Z_approx + komponen_i;
+    sisa = norm(Z - Z_approx, 'fro'); % error sisa setelah i komponen
+    fprintf('  %2d | %9.4f | %11.4f\n', i, sv(i), sisa);
+end
+
+% Menentukan rank efektif k* berdasarkan energi kumulatif >= 95%
+% k* = jumlah komponen minimum yang merangkum 95% variansi data
+fprintf('Rank efektif untuk berbagai threshold energi:\n');
+for thr = [0.90, 0.95, 0.99]
+    k_thr = find(energi_kum >= thr, 1, 'first');
+    fprintf('k untuk %.0f%% energi: %d (dari %d total)\n', thr*100, k_thr, n);
+end
+
+% Menetapkan rank efektif utama = 95%
+k_efektif = find(energi_kum >= 0.95, 1, 'first');
+fprintf('Rank efektif k* = %d\n', k_efektif);
+fprintf('Energi kumulatif pada k=%d : %.4f%%\n', k_efektif, energi_kum(k_efektif)*100);
+
+% Rekonstruksi rank-k untuk beberapa nilai k
+k_list = unique([3, 5, 10, 20, k_efektif]);
+fprintf('Rekonstruksi Rank-k:\n');
+fprintf('  k  |  Energi Kum(%%)  |  Rel. Error(%%)\n');
+fprintf('-----|----------------|---------------\n');
+for idx = 1:length(k_list)
+    k = k_list(idx);
+    % Merekonstruksi Z dengan k komponen pertama
+    Z_k = U(:,1:k) * S(1:k,1:k) * V(:,1:k)';
+    % Menghitung relative error hasil rekonstruksi
+    rel_err = norm(Z - Z_k, 'fro') / norm(Z, 'fro');
+    fprintf('  %2d  | %14.4f | %13.4f\n', k, energi_kum(k)*100, rel_err*100);
+end
+
+% Menampilkan interpretasi nilai singular
+fprintf('Interpretasi Nilai Singular:\n');
+fprintf('sigma_1 = %.4f (%.2f%%) -> pola polusi dominan\n', sv(1), energi_prop(1)*100);
+fprintf('sigma_2 = %.4f (%.2f%%) -> pola sekunder\n', sv(2), energi_prop(2)*100);
+fprintf('sigma_%d = %.4f (%.2f%%) -> mulai merepresentasikan noise\n', ...
+    k_efektif+1, sv(k_efektif+1), energi_prop(k_efektif+1)*100);
+
+% Visualisasi spektrum nilai singular dan energi kumulatif
+figure;
+
+% Plot spektrum nilai singular
+subplot(2, 2, 1);
+plot(1:n, sv, 'b-o', 'MarkerSize', 4);
+xlabel('Indeks ke-i');
+ylabel('sigma_i');
+title('Spektrum Nilai Singular');
+grid on;
+
+% Plot energi kumulatif dengan garis threshold 95%
+subplot(2, 2, 2);
+plot(1:n, energi_kum*100, 'r-', 'LineWidth', 2);
+hold on;
+plot([1 n], [95 95], 'k--', 'LineWidth', 1.5);
+plot([k_efektif k_efektif], [0 100], 'g--', 'LineWidth', 1.5);
+xlabel('Jumlah komponen k');
+ylabel('Energi kumulatif (%)');
+title('Energi Kumulatif vs k');
+legend('Energi kumulatif', '95% threshold', sprintf('k*=%d', k_efektif));
+grid on;
+
+% Plot mode temporal u1 (pola polusi dominan sepanjang 365 hari)
+subplot(2, 2, 3);
+plot(1:365, U(:,1), 'b-');
+xlabel('Hari ke-');
+ylabel('Amplitudo');
+title('Mode Temporal u1');
+grid on;
+
+% Plot mode fitur v1 
+subplot(2, 2, 4);
+bar(1:n, V(:,1));
+xlabel('Indeks Sensor (1-96)');
+ylabel('Koefisien v1');
+title('Mode Fitur v1');
+grid on;
+
 %% Bagian 3 
 
 
