@@ -32,90 +32,34 @@ fprintf('Min nilai Z : %.4f\n', min(Z(:)));
 fprintf('Max nilai Z : %.4f\n', max(Z(:)));
 
 %% Bagian 2 
-% SVD Penuh dan Analisis Spektrum Singular Value
-fprintf('\nBAGIAN 2: SVD Penuh dan Rank Efektif\n');
+% Melakukan SVD penuh pada matriks Z = U * S * V'
+fprintf('BAGIAN 2: SVD Penuh dan Analisis Spektrum\n');
 
-% Melakukan SVD Penuh pada matriks Z (yang sudah distandarisasi)
-[U, S, V] = svd(Z);
+% Menghasilkan U(365x96), S(96x96), V(96x96)
+[U, S, V] = svd(Z, 'econ');
 
-% Mengambil nilai singular dari matriks diagonal S
-singular_values = diag(S);
+% Menampilkan ukuran ketiga matriks hasil SVD untuk verifikasi
+fprintf('Ukuran U  : %d x %d\n', size(U,1), size(U,2)); % vektor singular kiri
+fprintf('Ukuran S  : %d x %d\n', size(S,1), size(S,2)); % nilai singular
+fprintf('Ukuran V  : %d x %d\n', size(V,1), size(V,2)); % vektor singular kanan
 
-% Menghitung energi kumulatif
-% Energi dalam konteks ini dihitung dari kuadrat singular value (varians)
-energy = singular_values .^ 2;
-total_energy = sum(energy);
-cumulative_energy = cumsum(energy) / total_energy;
+% Verifikasi rekonstruksi Z = U * S * V'
+Z_rekon = U * S * V';
+err_rekon = norm(Z - Z_rekon, 'fro');
+fprintf('Verifikasi rekonstruksi Z = U*S*V :\n');
+fprintf('norm(Z - U*S*V) = %.2e\n', err_rekon);
 
-% Menentukan rank efektif k (energi kumulatif >= 95%)
-k = find(cumulative_energy >= 0.95, 1);
+% Verifikasi sifat ortogonal U dan V
+err_U = max(max(abs(U'*U - eye(size(U,2)))));
+err_V = max(max(abs(V'*V - eye(size(V,2)))));
+fprintf('Cek U x U = I : max error = %.2e\n', err_U);
+fprintf('Cek V x V = I : max error = %.2e\n', err_V);
 
-% Menampilkan hasil
-fprintf('Jumlah total singular value: %d\n', length(singular_values));
-fprintf('Rank efektif k untuk energi kumulatif >= 95%% adalah: %d\n', k);
-fprintf('Total persentase energi yang dipertahankan pada k = %d adalah: %.2f%%\n', k, cumulative_energy(k) * 100);
-
-% Visualisasi Spektrum dan Energi Kumulatif
-figure('Name', 'Analisis SVD', 'NumberTitle', 'off');
-
-% Plot 1: Spektrum Singular Value
-subplot(1, 2, 1);
-plot(1:length(singular_values), singular_values, 'b-o', 'MarkerSize', 4, 'LineWidth', 1.2);
-title('Spektrum Singular Value');
-xlabel('Indeks Singular Value');
-ylabel('Nilai Singular (\sigma)');
-grid on;
-
-% Plot 2: Energi Kumulatif
-subplot(1, 2, 2);
-plot(1:length(cumulative_energy), cumulative_energy * 100, 'r-x', 'LineWidth', 1.2);
-hold on;
-yline(95, 'k--', 'Batas 95%', 'LineWidth', 1.5);
-xline(k, 'k--', sprintf('k = %d', k), 'LineWidth', 1.5, 'LabelVerticalAlignment', 'bottom');
-title('Energi Kumulatif');
-xlabel('Jumlah Komponen Utama (k)');
-ylabel('Energi Kumulatif (%)');
-grid on;
-hold off;
+% Mengambil nilai singular dari diagonal matriks S
+sv = diag(S);
 
 %% Bagian 3 
-% Rekonstruksi Matriks dengan Rank Tereduksi
-fprintf('\nBAGIAN 3: Rekonstruksi Matriks (k = 3, 5, 10, 20)\n');
 
-% Daftar nilai k yang akan dievaluasi
-k_values = [3, 5, 10, 20];
-errors = zeros(length(k_values), 1);
-
-% Menghitung Frobenius norm dari matriks Z (karena SVD dilakukan pada Z)
-norm_Z = norm(Z, 'fro');
-
-for i = 1:length(k_values)
-    k_val = k_values(i);
-
-    % Mengambil k kolom/baris pertama dari U, S, dan V
-    Uk = U(:, 1:k_val);
-    Sk = S(1:k_val, 1:k_val);
-    Vk = V(:, 1:k_val);
-
-    % Rekonstruksi matriks tereduksi (Z_k)
-    Zk = Uk * Sk * Vk';
-
-    % Menghitung relative reconstruction error (menggunakan Frobenius norm)
-    % ||Z - Z_k||_F / ||Z||_F
-    rel_error = norm(Z - Zk, 'fro') / norm_Z;
-    errors(i) = rel_error;
-
-    fprintf('Relative reconstruction error untuk k = %2d: %.4f (%.2f%%)\n', k_val, rel_error, rel_error * 100);
-end
-
-% Visualisasi Error Rekonstruksi
-figure('Name', 'Reconstruction Error', 'NumberTitle', 'off');
-plot(k_values, errors * 100, 'b-o', 'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', 'r');
-title('Relative Reconstruction Error vs k');
-xlabel('Nilai k (Rank Tereduksi)');
-ylabel('Relative Error (%)');
-xticks(k_values);
-grid on;
 
 %% Bagian 4
 
