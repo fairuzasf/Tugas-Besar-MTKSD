@@ -78,7 +78,44 @@ ylabel('Energi Kumulatif (%)');
 grid on;
 hold off;
 
-%% Bagian 3
+%% Bagian 3 
+% Rekonstruksi Matriks dengan Rank Tereduksi
+fprintf('\nBAGIAN 3: Rekonstruksi Matriks (k = 3, 5, 10, 20)\n');
+
+% Daftar nilai k yang akan dievaluasi
+k_values = [3, 5, 10, 20];
+errors = zeros(length(k_values), 1);
+
+% Menghitung Frobenius norm dari matriks Z (karena SVD dilakukan pada Z)
+norm_Z = norm(Z, 'fro');
+
+for i = 1:length(k_values)
+    k_val = k_values(i);
+
+    % Mengambil k kolom/baris pertama dari U, S, dan V
+    Uk = U(:, 1:k_val);
+    Sk = S(1:k_val, 1:k_val);
+    Vk = V(:, 1:k_val);
+
+    % Rekonstruksi matriks tereduksi (Z_k)
+    Zk = Uk * Sk * Vk';
+
+    % Menghitung relative reconstruction error (menggunakan Frobenius norm)
+    % ||Z - Z_k||_F / ||Z||_F
+    rel_error = norm(Z - Zk, 'fro') / norm_Z;
+    errors(i) = rel_error;
+
+    fprintf('Relative reconstruction error untuk k = %2d: %.4f (%.2f%%)\n', k_val, rel_error, rel_error * 100);
+end
+
+% Visualisasi Error Rekonstruksi
+figure('Name', 'Reconstruction Error', 'NumberTitle', 'off');
+plot(k_values, errors * 100, 'b-o', 'LineWidth', 1.5, 'MarkerSize', 6, 'MarkerFaceColor', 'r');
+title('Relative Reconstruction Error vs k');
+xlabel('Nilai k (Rank Tereduksi)');
+ylabel('Relative Error (%)');
+xticks(k_values);
+grid on;
 
 %% Bagian 4
 
