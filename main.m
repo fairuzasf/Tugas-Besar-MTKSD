@@ -1,10 +1,9 @@
 clear; clc;
 
 % Membaca dataset dari file CSV
-data = readtable('DataSet_KualitasUdara_K1.csv', ...
-    'VariableNamingRule', 'preserve');
+data = dlmread('DataSet_KualitasUdara_K1.csv', ',', 1, 0);
 % Mengekstrak  data (kolom 2 sampai 97)
-A = table2array(data(:, 2:end));
+A = data(:, 2:end);
 
 %% BAGIAN 1
 % Menampilkan ukuran matriks diawal untuk memverifikasi 
