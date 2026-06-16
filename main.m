@@ -210,10 +210,9 @@ xticks(k_values);
 grid on;
 
 %% Bagian 4
-
 % Mengambil data waktu dan polutan di satu titik (titik ke-1 misal)
-x_data = data{:, 1};       % Hari ke-
-y_data = data{:, 2};       % PM2.5 di titik 1
+x_data = data(:, 1);       % Hari ke-
+y_data = data(:, 2);       % PM2.5 di titik 1
 
 % Mencari titik puncak polusi (maksimum)
 [max_val, max_idx] = max(y_data);
@@ -307,59 +306,30 @@ grid on;
 
 %% Bagian 6
 % Analisis Paparan Polutan Menggunakan Integral
-% Bagian ini bertujuan untuk menghitung total akumulasi paparan polutan udara
-% Pada dua interval waktu yaitu (Pagi-Siang) vs (Siang-Malam) pendekatan dilakukan 
-% menggunakan dua metode yaitu Integral Eksak (Analitik) dan Integral Numerik (Trapezoidal Komposisi)
-
-fprintf('\n=======================================================\n');
 fprintf('BAGIAN 5: Perhitungan Paparan Polutan Menggunakan Integral\n');
-fprintf('=======================================================\n');
-
-% -------------------------------------------------------------------------
-% 1. DEFINISI WAKTU DAN PARAMETER JENDELA DATA
-% -------------------------------------------------------------------------
-data_asli = table2array(data(:, 2:end));
-
-% Kami melakukan proyeksi spasial-temporal dengan merata-ratakan seluruh hari (secara vertikal)
-% Menggunakan rata-rata dari 'data_asli' (bukan matriks A hasil Z-score) 
-% agar profil harian bernilai positif nyata dan tidak menghasilkan NaN pada perhitungan galat.
 profil_harian = mean(data_asli, 1); % Menghitung nilai mean tiap kolom sensor sepanjang tahun
 
 % Membentuk domain kontinu waktu (t) dari jam 0 hingga jam 24.
-% Panjang 't_data' disesuaikan secara otomatis dengan jumlah kolom fitur (96 elemen).
 t_data = linspace(0, 24, length(profil_harian));
 
 % Menentukan batas-batas integrasi batas bawah (a) dan batas atas (b)
 t_pagi_mulai = 6; t_pagi_selesai = 14; % Jendela waktu Pagi - Siang (8 jam)
 t_malam_mulai = 14; t_malam_selesai = 22; % Jendela waktu Siang - Malam (8 jam)
 
-% -------------------------------------------------------------------------
-% 2. ANALITIK: PENDEKATAN POLINOMIAL KONTINU (CURVE FITTING)
-% -------------------------------------------------------------------------
-% Karena data bertipe diskrit, kita harus melakukan rekonstruksi fungsi kontinu f(t)
 % Digunakan polinomial derajat 7 (orde 7) untuk memodelkan fluktuasi polutan udara secara smooth
 orde_poly = 7;
 p_integral = polyfit(t_data, profil_harian, orde_poly);
 
 % Proses Integrasi Simbolik 
-% Aturan kalkulus integral menyatakan bahwa integral dari c*t^n adalah (c/(n+1))*t^(n+1)
-% Suku [orde_poly+1:-1:1] bertindak sebagai pembagi pembentuk pangkat baru.
-% Elemen terakhir '0' ditambahkan sebagai representasi konstanta integrasi (C = 0)
 p_integrasi = [p_integral ./ (orde_poly+1:-1:1), 0];
 
-% Evaluasi Integral Defisit menggunakan Teorema Dasar Kalkulus II: [ F(b) - F(a)]
-% Menggunakan nama variabel 'p_integrasi' yang konsisten dengan definisi di atas
 % Menghitung akumulasi eksak untuk Periode 1 (Pagi - Siang: 06.00 s.d 14.00)
 analitik_pagi = polyval(p_integrasi, t_pagi_selesai) - polyval(p_integrasi, t_pagi_mulai);
 
 % Menghitung akumulasi eksak untuk Periode 2 (Siang - Malam: 14.00 s.d 22.00)
 analitik_malam = polyval(p_integrasi, t_malam_selesai) - polyval(p_integrasi, t_malam_mulai);
 
-% -------------------------------------------------------------------------
-% 3. NUMERIK: METODE TRAPEZOIDAL MANUAL (FUNGSI DASAR)
-% -------------------------------------------------------------------------
-% Menggunakan pemetaan kondisi logis untuk mencari indeks baris di dalam matriks t_data
-% yang memiliki nilai paling mendekati atau tepat berada pada jam 6, 14, dan 22.
+% Menggunakan pemetaan kondisi logis untuk mencari indeks baris di dalam matriks
 idx_6 = find(t_data >= t_pagi_mulai, 1, 'first');
 idx_14 = find(t_data >= t_pagi_selesai, 1, 'first');
 idx_22 = find(t_data >= t_malam_selesai, 1, 'first');
@@ -380,9 +350,6 @@ h_malam = (t_malam(end) - t_malam(1)) / N_malam; % Menghitung lebar langkah (ste
 % Implementasi Aturan Trapesium Komposisi
 numerik_malam = (h_malam / 2) * (y_malam(1) + 2*sum(y_malam(2:end-1)) + y_malam(end));
 
-% -------------------------------------------------------------------------
-% 4. PERHITUNGAN GALAT (ERROR) APROKSIMASI NUMERIK
-% -------------------------------------------------------------------------
 % Menghitung Galat Absolut: Nilai Mutlak dari |Solusi Analitik - Solusi Numerik|
 err_abs_pagi = abs(analitik_pagi - numerik_pagi);
 % Menghitung Galat Relatif dalam bentuk presentase terhadap Solusi Analitik Eksak
@@ -391,9 +358,6 @@ err_rel_pagi = (err_abs_pagi / analitik_pagi) * 100;
 err_abs_malam = abs(analitik_malam - numerik_malam);
 err_rel_malam = (err_abs_malam / analitik_malam) * 100;
 
-% -------------------------------------------------------------------------
-% 5. MENAMPILKAN OUTPUT EVALUASI KE COMMAND WINDOW
-% -------------------------------------------------------------------------
 % Proses pencetakan data numerik akhir secara terstruktur 
 fprintf('\nHASIL INTEGRAL PAPARAN POLUTAN:\n');
 fprintf('----------------------------------------------------------------\n');
@@ -410,16 +374,14 @@ fprintf('   - Galat Absolut             : %.4e\n', err_abs_malam);
 fprintf('   - Galat Relatif             : %.4f%%\n', err_rel_malam);
 fprintf('-----------------------------------------------------------------\n');
 
-% -------------------------------------------------------------------------
-% 6. VISUALISASI GRAFIK INTEGRAL (LUAS DAERAH DI BAWAH KURVA)
-% -------------------------------------------------------------------------
+% visualisasi grafik
 figure('Name', 'Analisis Integral Paparan Polutan', 'NumberTitle', 'off');
 
 % Menggambar kurva kontinu beresolusi tinggi (500 titik) menggunakan koefisien polinomial
 t_mulus = linspace(0, 24, 500);
 y_mulus = polyval(p_integral, t_mulus);
 
-% Plotting data asli diskret (sebagai marker titik) beserta kurva matematikanya
+% Plotting data asli diskret beserta kurva matematikanya
 plot(t_data, profil_harian, 'k.', 'MarkerSize', 8, 'DisplayName', 'Data Rata-rata Polutan'); hold on;
 plot(t_mulus, y_mulus, 'k-', 'LineWidth', 1.5, 'DisplayName', 'Kurva Pendekatan f(t)');
 
