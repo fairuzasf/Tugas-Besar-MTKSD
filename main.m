@@ -344,7 +344,7 @@ fprintf('\ndC/dT (terhadap suhu)        = %.4f ug/m3 per degC\n', dC_dT);
 fprintf('dC/dH (terhadap kelembaban)  = %.4f ug/m3 per persen\n', dC_dH);
 fprintf('dC/dW (terhadap angin)       = %.4f ug/m3 per m/s\n', dC_dW);
 
-% Rumus beda hingga: df/dx ≈ [f(x+h) - f(x-h)] / (2h)
+%Rumus beda hingga: df/dx ≈ [f(x+h) - f(x-h)] / (2h)
 
 fprintf('\n Verifikasi turunan numerik\n');
 
@@ -352,6 +352,23 @@ h = 0.01; % langkah kecil
 
 % Fungsi anonim model C
 C_model = @(t, hh, w) a(1) + a(2)*t + a(3)*hh + a(4)*w + a(5)*t.*hh + a(6)*hh.*w;
+
+%Turunan numerik di titik rata-rata
+dC_dT_num = (C_model(T_mean+h, H_mean, W_mean) - C_model(T_mean-h, H_mean, W_mean)) / (2*h);
+dC_dH_num = (C_model(T_mean, H_mean+h, W_mean) - C_model(T_mean, H_mean-h, W_mean)) / (2*h);
+dC_dW_num = (C_model(T_mean, H_mean, W_mean+h) - C_model(T_mean, H_mean, W_mean-h)) / (2*h);
+
+fprintf('dC/dT numerik = %.4f  (analitik = %.4f)\n', dC_dT_num, dC_dT);
+fprintf('dC/dH numerik = %.4f  (analitik = %.4f)\n', dC_dH_num, dC_dH);
+fprintf('dC/dW numerik = %.4f  (analitik = %.4f)\n', dC_dW_num, dC_dW);
+
+%Hitung turunan parsial harian untuk semua data
+dC_dT_harian = a(2) + a(5) .* H;
+dC_dH_harian = a(3) + a(5) .* T + a(6) .* W;
+dC_dW_harian = a(4) + a(6) .* H;
+
+%visualisasi 
+figure('Name', 'Bagian 5 - Turunan Parsial', 'Position', [100, 100, 1200, 800]);
 
 %% Bagian 6
 % Analisis Paparan Polutan Menggunakan Integral
