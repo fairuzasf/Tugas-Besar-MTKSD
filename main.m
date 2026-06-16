@@ -317,7 +317,7 @@ fprintf('\nMenghitung koefisien regresi...\n');
 %Susun matriks fitur X
 X = [ones(n,1), T, H, W, T.*H, H.*W];
 
-% Hitung koefisien dengan metode Least Squares: a = (X'X)^-1 * X' * C
+%Hitung koefisien dengan metode Least Squares: a = (X'X)^-1 * X' * C
 a = (X' * X) \ (X' * PM25);
 
 fprintf('Koefisien model berhasil dihitung.\n');
@@ -329,6 +329,29 @@ fprintf('  a4 (T*H)       = %.4f\n', a(5));
 fprintf('  a5 (H*W)       = %.4f\n', a(6));
 
 fprintf('\n Turunan parsial analitik \n'); 
+
+%Hitung nilai rata-rata T, H, W
+T_mean = mean(T);
+H_mean = mean(H);
+W_mean = mean(W);
+
+dC_dT = a(2) + a(5) * H_mean;
+dC_dH = a(3) + a(5) * T_mean + a(6) * W_mean;
+dC_dW = a(4) + a(6) * H_mean;
+
+fprintf('Dihitung pada titik rata-rata: T=%.2f, H=%.2f, W=%.2f\n', T_mean, H_mean, W_mean);
+fprintf('\ndC/dT (terhadap suhu)        = %.4f ug/m3 per degC\n', dC_dT);
+fprintf('dC/dH (terhadap kelembaban)  = %.4f ug/m3 per persen\n', dC_dH);
+fprintf('dC/dW (terhadap angin)       = %.4f ug/m3 per m/s\n', dC_dW);
+
+% Rumus beda hingga: df/dx ≈ [f(x+h) - f(x-h)] / (2h)
+
+fprintf('\n Verifikasi turunan numerik\n');
+
+h = 0.01; % langkah kecil
+
+% Fungsi anonim model C
+C_model = @(t, hh, w) a(1) + a(2)*t + a(3)*hh + a(4)*w + a(5)*t.*hh + a(6)*hh.*w;
 
 %% Bagian 6
 % Analisis Paparan Polutan Menggunakan Integral
