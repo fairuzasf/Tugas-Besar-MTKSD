@@ -302,6 +302,33 @@ ylabel('Galat Absolut (|f(x) - T_n(x)|)');
 grid on;
 
 %% Bagian 5
+%Turunan parsial fungsi konsentrasi polutan
+n = length(PM25); %= 365
+%Suhu dalam Celsius: 25-35 derajat
+T = 28 + 5 * sin(2*pi*(1:n)/365)';
+%Kelembaban dalam persen: 60-90%
+H = 75 + 15 * cos(2*pi*(1:n)/365)';
+%Kecepatan Angin dalam m/s: 1-5 m/s
+W = 3 + 2 * sin(2*pi*(1:n)/180)';
+
+%Rumus: C(T, H, W) = a0 + a1*T + a2*H + a3*W + a4*T*H + a5*H*W
+fprintf('\nMenghitung koefisien regresi...\n');
+
+%Susun matriks fitur X
+X = [ones(n,1), T, H, W, T.*H, H.*W];
+
+% Hitung koefisien dengan metode Least Squares: a = (X'X)^-1 * X' * C
+a = (X' * X) \ (X' * PM25);
+
+fprintf('Koefisien model berhasil dihitung.\n');
+fprintf('  a0 (konstanta) = %.4f\n', a(1));
+fprintf('  a1 (suhu T)    = %.4f\n', a(2));
+fprintf('  a2 (kelembaban H) = %.4f\n', a(3));
+fprintf('  a3 (angin W)   = %.4f\n', a(4));
+fprintf('  a4 (T*H)       = %.4f\n', a(5));
+fprintf('  a5 (H*W)       = %.4f\n', a(6));
+
+fprintf('\n Turunan parsial analitik \n'); 
 
 %% Bagian 6
 % Analisis Paparan Polutan Menggunakan Integral
