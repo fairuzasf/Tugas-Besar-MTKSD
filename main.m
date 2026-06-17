@@ -302,6 +302,7 @@ ylabel('Galat Absolut (|f(x) - T_n(x)|)');
 grid on;
 
 %% Bagian 5
+fprintf('BAGIAN 5: Perhitungan Paparan Polutan Menggunakan Integral\n');
 %Turunan parsial fungsi konsentrasi polutan
 n = length(PM25); %= 365
 %Suhu dalam Celsius: 25-35 derajat
@@ -446,7 +447,6 @@ end
 
 %% Bagian 6
 % Analisis Paparan Polutan Menggunakan Integral
-fprintf('BAGIAN 5: Perhitungan Paparan Polutan Menggunakan Integral\n');
 profil_harian = mean(data_asli, 1); % Menghitung nilai mean tiap kolom sensor sepanjang tahun
 
 % Membentuk domain kontinu waktu (t) dari jam 0 hingga jam 24.
