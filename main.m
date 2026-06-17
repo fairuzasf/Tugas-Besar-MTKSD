@@ -370,6 +370,80 @@ dC_dW_harian = a(4) + a(6) .* H;
 %visualisasi 
 figure('Name', 'Bagian 5 - Turunan Parsial', 'Position', [100, 100, 1200, 800]);
 
+%Plot 1: Data PM2.5 asli
+subplot(2, 3, 1);
+plot(1:n, PM25, 'b-', 'LineWidth', 1.2);
+xlabel('Hari ke-'); ylabel('PM2.5 (ug/m3)');
+title('Data PM2.5 Asli (Titik 1)');
+grid on;
+
+%Plot 2: dC/dT harian
+subplot(2, 3, 2);
+plot(1:n, dC_dT_harian, 'r-', 'LineWidth', 1.2);
+xlabel('Hari ke-'); ylabel('dC/dT');
+title('Turunan Parsial terhadap Suhu (T)');
+grid on;
+yline(0, 'k--', 'nol');
+
+%Plot 3: dC/dH harian
+subplot(2, 3, 3);
+plot(1:n, dC_dH_harian, 'g-', 'LineWidth', 1.2);
+xlabel('Hari ke-'); ylabel('dC/dH');
+title('Turunan Parsial terhadap Kelembaban (H)');
+grid on;
+yline(0, 'k--', 'nol');
+
+%Plot 4: dC/dW harian
+subplot(2, 3, 4);
+plot(1:n, dC_dW_harian, 'm-', 'LineWidth', 1.2);
+xlabel('Hari ke-'); ylabel('dC/dW');
+title('Turunan Parsial terhadap Kecepatan Angin (W)');
+grid on;
+yline(0, 'k--', 'nol');
+
+%Plot 5: Membandingkan turunan
+subplot(2, 3, 5);
+bar([dC_dT, dC_dH, dC_dW]);
+set(gca, 'XTickLabel', {'dC/dT', 'dC/dH', 'dC/dW'});
+ylabel('Nilai Turunan di Titik Rata-rata');
+title('Perbandingan Turunan Parsial');
+grid on;
+
+%Plot 6: PM2.5 vs Suhu untuk scatter plyt
+subplot(2, 3, 6);
+scatter(T, PM25, 10, 'b', 'filled', 'MarkerFaceAlpha', 0.3);
+xlabel('Suhu (degC)'); ylabel('PM2.5 (ug/m3)');
+title('Hubungan PM2.5 vs Suhu');
+grid on;
+
+sgtitle('Bagian 5: Analisis Turunan Parsial Konsentrasi Polutan PM2.5');
+
+fprintf('\n=== INTERPRETASI FISIK ===\n');
+
+if dC_dT < 0
+    fprintf('dC/dT < 0 : Ketika suhu naik 1 degC, konsentrasi PM2.5 TURUN %.4f ug/m3\n', abs(dC_dT));
+    fprintf('  -> Suhu tinggi menyebabkan konveksi udara, polutan terbawa ke atas (menyebar)\n');
+else
+    fprintf('dC/dT > 0 : Ketika suhu naik 1 degC, konsentrasi PM2.5 NAIK %.4f ug/m3\n', dC_dT);
+    fprintf('  -> Suhu tinggi meningkatkan reaksi kimia pembentukan polutan sekunder\n');
+end
+
+if dC_dH > 0
+    fprintf('\ndC/dH > 0 : Ketika kelembaban naik 1%%, konsentrasi PM2.5 NAIK %.4f ug/m3\n', dC_dH);
+    fprintf('  -> Kelembaban tinggi menyebabkan partikel PM2.5 menggumpal (hygroscopic growth)\n');
+else
+    fprintf('\ndC/dH < 0 : Ketika kelembaban naik 1%%, konsentrasi PM2.5 TURUN %.4f ug/m3\n', abs(dC_dH));
+    fprintf('  -> Kelembaban tinggi menyebabkan partikel mengendap (wet deposition)\n');
+end
+
+if dC_dW < 0
+    fprintf('\ndC/dW < 0 : Ketika angin naik 1 m/s, konsentrasi PM2.5 TURUN %.4f ug/m3\n', abs(dC_dW));
+    fprintf('  -> Angin kencang mengencerkan dan menyebarkan polutan ke area lebih luas\n');
+else
+    fprintf('\ndC/dW > 0 : Ketika angin naik 1 m/s, konsentrasi PM2.5 NAIK %.4f ug/m3\n', dC_dW);
+    fprintf('  -> Angin membawa polutan dari daerah lain ke titik pemantauan\n');
+end
+
 %% Bagian 6
 % Analisis Paparan Polutan Menggunakan Integral
 fprintf('BAGIAN 5: Perhitungan Paparan Polutan Menggunakan Integral\n');
