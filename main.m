@@ -547,3 +547,77 @@ grid on;
 legend('Location', 'best');
 
 %% Bagian 7
+% Analisis Akhir Hasil Pemodelan Kualitas Udara
+
+fprintf('\nBAGIAN 7: Analisis Akhir dan Kesimpulan\n');
+
+% Mengumpulkan beberapa indikator utama dari hasil sebelumnya
+energi_95 = energi_kum(k_efektif) * 100;
+
+mean_err_taylor3 = mean(err3);
+mean_err_taylor5 = mean(err5);
+mean_err_taylor7 = mean(err7);
+
+fprintf('\nRINGKASAN HASIL:\n');
+fprintf('------------------------------------------------------\n');
+fprintf('Rank efektif SVD (95%% energi)      : %d\n', k_efektif);
+fprintf('Energi kumulatif                   : %.2f%%\n', energi_95);
+fprintf('------------------------------------------------------\n');
+fprintf('Galat rata-rata Taylor orde 3      : %.6f\n', mean_err_taylor3);
+fprintf('Galat rata-rata Taylor orde 5      : %.6f\n', mean_err_taylor5);
+fprintf('Galat rata-rata Taylor orde 7      : %.6f\n', mean_err_taylor7);
+fprintf('------------------------------------------------------\n');
+fprintf('Paparan pagi-siang                 : %.4f\n', numerik_pagi);
+fprintf('Paparan siang-malam                : %.4f\n', numerik_malam);
+fprintf('------------------------------------------------------\n');
+
+% Membandingkan galat Taylor
+figure('Name','Bagian 7 - Ringkasan Analisis','NumberTitle','off');
+
+subplot(2,2,1);
+bar([mean_err_taylor3 mean_err_taylor5 mean_err_taylor7]);
+set(gca,'XTickLabel',{'Orde 3','Orde 5','Orde 7'});
+ylabel('Galat Rata-rata');
+title('Perbandingan Galat Taylor');
+grid on;
+
+% Membandingkan error rekonstruksi SVD
+subplot(2,2,2);
+plot(k_values, errors*100,'o-','LineWidth',1.5);
+xlabel('Nilai k');
+ylabel('Relative Error (%)');
+title('Error Rekonstruksi SVD');
+grid on;
+
+% Perbandingan paparan polutan
+subplot(2,2,3);
+bar([numerik_pagi numerik_malam]);
+set(gca,'XTickLabel',{'06-14','14-22'});
+ylabel('Total Paparan');
+title('Perbandingan Paparan Polutan');
+grid on;
+
+% Energi kumulatif SVD
+subplot(2,2,4);
+plot(energi_kum*100,'LineWidth',1.5);
+hold on;
+plot([1 length(energi_kum)],[95 95],'r--');
+xlabel('Komponen');
+ylabel('Energi Kumulatif (%)');
+title('Energi Kumulatif SVD');
+grid on;
+
+fprintf('\nKESIMPULAN SEMENTARA:\n');
+
+if mean_err_taylor7 < mean_err_taylor5 && mean_err_taylor5 < mean_err_taylor3
+    fprintf('- Orde Taylor yang lebih tinggi menghasilkan galat yang lebih kecil.\n');
+end
+
+fprintf('- Semakin besar nilai k, error rekonstruksi SVD semakin kecil.\n');
+fprintf('- Sebagian besar informasi data telah direpresentasikan oleh %d komponen utama.\n', k_efektif);
+
+if numerik_pagi > numerik_malam
+    fprintf('- Paparan polutan lebih besar pada periode pagi-siang.\n');
+else
+    fprintf('- Paparan polutan lebih besar pada periode siang-malam.\n');
+end
