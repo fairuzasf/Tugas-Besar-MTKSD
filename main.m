@@ -209,25 +209,23 @@ xticks(k_values);
 grid on;
 
 %% Bagian 4
-% Ekstraksi dan Validasi Dataset
-data = readtable('dummydataset.csv', 'VariableNamingRule', 'preserve');
-x_data = data{:, 1};       
-y_data = data{:, 2};       
+fprintf('\nBAGIAN 4: Aproksimasi Deret Taylor PM2.5\n');
 
-% Konversi ke format numerik standar jika data terbaca sebagai cell/string
-if iscell(y_data), y_data = str2double(y_data); end
-if iscell(x_data), x_data = str2double(x_data); end
+% Ekstraksi Data dari variabel yang sudah dibaca di Bagian 1
+% data(:,1) adalah kolom 'Hari ke-', A(:,1) adalah data PM2.5_1 (kolom pertama polutan)
+x_data = data(:, 1);       
+y_data = A(:, 1);       
 
-% Menghapus baris yang mengandung NaN untuk mencegah error kalkulasi
+% Menghapus baris yang mengandung NaN untuk mencegah error kalkulasi matriks
 valid_idx = ~isnan(x_data) & ~isnan(y_data);
 x_data = x_data(valid_idx);
 y_data = y_data(valid_idx);
 
-%  Penentuan Titik Puncak
+% Penentuan Titik Puncak
 [max_val, max_idx] = max(y_data);
 x0 = x_data(max_idx);      
 
-%  Pembentukan Window Data (15 Hari)
+% Pembentukan Window Data (15 Hari sebelum dan sesudah puncak)
 win_size = 15;
 idx_start = max(1, max_idx - win_size);
 idx_end = min(length(x_data), max_idx + win_size);
@@ -235,13 +233,13 @@ idx_end = min(length(x_data), max_idx + win_size);
 x_win = x_data(idx_start:idx_end);
 y_win = y_data(idx_start:idx_end);
 
-%  TRANSFORMASI TITIK PUSAT (Menghindari "Badly Conditioned Polynomial")
+% TRANSFORMASI TITIK PUSAT (Menghindari "Badly Conditioned Polynomial")
 dx = x_win - x0; 
 
-%  Curve Fitting pada Data Terpusat
+% Curve Fitting pada Data Terpusat
 p = polyfit(dx, y_win, 8);
 
-%  Eksekusi Turunan Analitik
+% Eksekusi Turunan Analitik
 p1 = polyder(p); p2 = polyder(p1); p3 = polyder(p2);
 p4 = polyder(p3); p5 = polyder(p4); p6 = polyder(p5);
 p7 = polyder(p6);
@@ -251,19 +249,19 @@ d0 = polyval(p, 0);  d1 = polyval(p1, 0); d2 = polyval(p2, 0);
 d3 = polyval(p3, 0); d4 = polyval(p4, 0); d5 = polyval(p5, 0);
 d6 = polyval(p6, 0); d7 = polyval(p7, 0);
 
-%  Substitusi Deret Taylor (Orde 3, 5, 7)
+% Substitusi Deret Taylor (Orde 3, 5, 7)
 T3 = d0 + d1.*dx + (d2/factorial(2)).*dx.^2 + (d3/factorial(3)).*dx.^3;
 T5 = T3 + (d4/factorial(4)).*dx.^4 + (d5/factorial(5)).*dx.^5;
 T7 = T5 + (d6/factorial(6)).*dx.^6 + (d7/factorial(7)).*dx.^7;
 
-%  Kalkulasi Galat Absolut Analitik
+% Kalkulasi Galat Absolut Analitik
 f_true = polyval(p, dx);
 err3 = abs(f_true - T3);
 err5 = abs(f_true - T5);
 err7 = abs(f_true - T7);
 
-%  Visualisasi Render
-figure('Name', 'Aproksimasi Deret Taylor PM2.5');
+% Visualisasi Render
+figure('Name', 'Aproksimasi Deret Taylor PM2.5', 'NumberTitle', 'off');
 plot(x_win, y_win, 'ko', 'MarkerFaceColor', 'k', 'DisplayName', 'Data Asli'); hold on;
 plot(x_win, f_true, 'k-', 'LineWidth', 2, 'DisplayName', 'Fungsi Asli f(x)');
 plot(x_win, T3, 'r--', 'LineWidth', 1.5, 'DisplayName', 'Taylor Orde 3');
@@ -272,11 +270,12 @@ plot(x_win, T7, 'b:', 'LineWidth', 1.5, 'DisplayName', 'Taylor Orde 7');
 plot(x0, max_val, 'm*', 'MarkerSize', 10, 'DisplayName', 'Titik Puncak');
 legend('Location', 'best'); xlabel('Hari Ke-'); ylabel('Konsentrasi PM2.5'); grid on;
 
-figure('Name', 'Analisis Galat Aproksimasi');
+figure('Name', 'Analisis Galat Aproksimasi', 'NumberTitle', 'off');
 plot(x_win, err3, 'r-', 'LineWidth', 1.5, 'DisplayName', 'Galat Orde 3'); hold on;
 plot(x_win, err5, 'g-', 'LineWidth', 1.5, 'DisplayName', 'Galat Orde 5');
 plot(x_win, err7, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Galat Orde 7');
 legend('Location', 'best'); xlabel('Hari Ke-'); ylabel('Galat Absolut'); grid on;
+
 
 
 %% Bagian 5
