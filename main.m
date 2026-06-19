@@ -304,19 +304,20 @@ grid on;
 %% Bagian 5
 fprintf('BAGIAN 5: Perhitungan Paparan Polutan Menggunakan Integral\n');
 %Turunan parsial fungsi konsentrasi polutan
-n = length(PM25); %= 365
+PM25 = A(:, 1); % PM2.5 titik pemantauan 1
+n_hari = length(PM25); % 365
 %Suhu dalam Celsius: 25-35 derajat
-T = 28 + 5 * sin(2*pi*(1:n)/365)';
+T = 28 + 5 * sin(2*pi*(1:n_hari)/365)';
 %Kelembaban dalam persen: 60-90%
-H = 75 + 15 * cos(2*pi*(1:n)/365)';
+H = 75 + 15 * cos(2*pi*(1:n_hari)/365)';
 %Kecepatan Angin dalam m/s: 1-5 m/s
-W = 3 + 2 * sin(2*pi*(1:n)/180)';
+W = 3 + 2 * sin(2*pi*(1:n_hari)/180)';
 
 %Rumus: C(T, H, W) = a0 + a1*T + a2*H + a3*W + a4*T*H + a5*H*W
 fprintf('\nMenghitung koefisien regresi...\n');
 
 %Susun matriks fitur X
-X = [ones(n,1), T, H, W, T.*H, H.*W];
+X = [ones(n_hari,1), T, H, W, T.*H, H.*W];
 
 %Hitung koefisien dengan metode Least Squares: a = (X'X)^-1 * X' * C
 a = (X' * X) \ (X' * PM25);
@@ -373,14 +374,14 @@ figure('Name', 'Bagian 5 - Turunan Parsial', 'Position', [100, 100, 1200, 800]);
 
 %Plot 1: Data PM2.5 asli
 subplot(2, 3, 1);
-plot(1:n, PM25, 'b-', 'LineWidth', 1.2);
+plot(1:n_hari, PM25, 'b-', 'LineWidth', 1.2);
 xlabel('Hari ke-'); ylabel('PM2.5 (ug/m3)');
 title('Data PM2.5 Asli (Titik 1)');
 grid on;
 
 %Plot 2: dC/dT harian
 subplot(2, 3, 2);
-plot(1:n, dC_dT_harian, 'r-', 'LineWidth', 1.2);
+plot(1:n_hari, dC_dT_harian, 'r-', 'LineWidth', 1.2);
 xlabel('Hari ke-'); ylabel('dC/dT');
 title('Turunan Parsial terhadap Suhu (T)');
 grid on;
@@ -388,7 +389,7 @@ yline(0, 'k--', 'nol');
 
 %Plot 3: dC/dH harian
 subplot(2, 3, 3);
-plot(1:n, dC_dH_harian, 'g-', 'LineWidth', 1.2);
+plot(1:n_hari, dC_dH_harian, 'g-', 'LineWidth', 1.2);
 xlabel('Hari ke-'); ylabel('dC/dH');
 title('Turunan Parsial terhadap Kelembaban (H)');
 grid on;
@@ -396,7 +397,7 @@ yline(0, 'k--', 'nol');
 
 %Plot 4: dC/dW harian
 subplot(2, 3, 4);
-plot(1:n, dC_dW_harian, 'm-', 'LineWidth', 1.2);
+plot(1:n_hari, dC_dW_harian, 'm-', 'LineWidth', 1.2);
 xlabel('Hari ke-'); ylabel('dC/dW');
 title('Turunan Parsial terhadap Kecepatan Angin (W)');
 grid on;
@@ -447,6 +448,7 @@ end
 
 %% Bagian 6
 % Analisis Paparan Polutan Menggunakan Integral
+data_asli = A;
 profil_harian = mean(data_asli, 1); % Menghitung nilai mean tiap kolom sensor sepanjang tahun
 
 % Membentuk domain kontinu waktu (t) dari jam 0 hingga jam 24.
