@@ -211,7 +211,7 @@ grid on;
 %% Bagian 4
 fprintf('\nBAGIAN 4: Aproksimasi Deret Taylor PM2.5\n');
 
-% Ekstraksi Data dari variabel yang sudah dibaca di Bagian 1
+
 % data(:,1) adalah kolom 'Hari ke-', A(:,1) adalah data PM2.5_1 (kolom pertama polutan)
 x_data = data(:, 1);       
 y_data = A(:, 1);       
