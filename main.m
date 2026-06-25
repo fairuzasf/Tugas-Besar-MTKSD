@@ -276,7 +276,53 @@ plot(x_win, err5, 'g-', 'LineWidth', 1.5, 'DisplayName', 'Galat Orde 5');
 plot(x_win, err7, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Galat Orde 7');
 legend('Location', 'best'); xlabel('Hari Ke-'); ylabel('Galat Absolut'); grid on;
 
+% 1. Kalkulasi Root Mean Square Error (RMSE) untuk tiap orde
+rmse3 = sqrt(mean(err3.^2));
+rmse5 = sqrt(mean(err5.^2));
+rmse7 = sqrt(mean(err7.^2));
 
+% Menampilkan output kuantitatif di Command Window
+fprintf('\n--- ANALISIS KUANTITATIF (RMSE) ---\n');
+fprintf('Nilai RMSE merupakan representasi total galat pada rentang observasi.\n');
+fprintf('RMSE Taylor Orde 3: %.4f\n', rmse3);
+fprintf('RMSE Taylor Orde 5: %.4f\n', rmse5);
+fprintf('RMSE Taylor Orde 7: %.4f\n', rmse7);
+
+% 2. Analisis Radius Validitas (Ambang Batas Toleransi Galat)
+toleransi_error = 10; 
+hari_valid_3 = sum(err3 <= toleransi_error);
+hari_valid_5 = sum(err5 <= toleransi_error);
+hari_valid_7 = sum(err7 <= toleransi_error);
+
+fprintf('\n--- ANALISIS RADIUS VALIDITAS (Toleransi Error = %d unit) ---\n', toleransi_error);
+fprintf('Jumlah hari dengan prediksi akurat (Error <= 10):\n');
+fprintf('Orde 3: %d hari\n', hari_valid_3);
+fprintf('Orde 5: %d hari\n', hari_valid_5);
+fprintf('Orde 7: %d hari\n', hari_valid_7);
+fprintf('---------------------------------------------------\n');
+
+% 3. Visualisasi Tambahan (Bar Chart Komparasi RMSE)
+figure('Name', 'Komparasi Kinerja Orde Taylor', 'NumberTitle', 'off');
+bar_data = [rmse3, rmse5, rmse7];
+b = bar(bar_data, 'FaceColor', 'flat');
+
+% Mewarnai bar agar selaras dengan warna garis pada plot sebelumnya
+b.CData(1,:) = [1 0 0]; % Merah untuk Orde 3
+b.CData(2,:) = [0 1 0]; % Hijau untuk Orde 5
+b.CData(3,:) = [0 0 1]; % Biru untuk Orde 7
+
+% Modifikasi tampilan grafik
+set(gca, 'XTickLabel', {'Orde 3', 'Orde 5', 'Orde 7'});
+ylabel('Nilai RMSE');
+title('Perbandingan Total Galat (RMSE) Berdasarkan Derajat Polinomial');
+grid on;
+
+% Menambahkan label angka di atas setiap bar grafik
+xtips1 = b(1).XEndPoints;
+ytips1 = b(1).YEndPoints;
+labels1 = string(round(b(1).YData, 2));
+text(xtips1, ytips1, labels1, 'HorizontalAlignment', 'center', ...
+    'VerticalAlignment', 'bottom');
 
 %% Bagian 5
 fprintf('BAGIAN 5: Perhitungan Paparan Polutan Menggunakan Integral\n');
