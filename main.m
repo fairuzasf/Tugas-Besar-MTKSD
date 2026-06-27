@@ -472,102 +472,100 @@ end
 %% Bagian 6
 % Analisis Paparan Polutan Menggunakan Integral
 data_asli = A;
-profil_harian = mean(data_asli, 1); % Menghitung nilai mean tiap kolom sensor sepanjang tahun
+profil_harian = mean(data_asli, 1); 
 
 % Membentuk domain kontinu waktu (t) dari jam 0 hingga jam 24.
 t_data = linspace(0, 24, length(profil_harian));
 
-% Menentukan batas-batas integrasi batas bawah (a) dan batas atas (b)
-t_pagi_mulai = 6; t_pagi_selesai = 14; % Jendela waktu Pagi - Siang (8 jam)
-t_malam_mulai = 14; t_malam_selesai = 22; % Jendela waktu Siang - Malam (8 jam)
+% Menentukan batas-batas indeks waktu berdasarkan kondisi logis
+idx_6 = find(t_data >= 6, 1, 'first');
+idx_14 = find(t_data >= 14, 1, 'first');
+idx_22 = find(t_data >= 22, 1, 'first');
 
-% Digunakan polinomial derajat 7 (orde 7) untuk memodelkan fluktuasi polutan udara secara smooth
-orde_poly = 7;
-p_integral = polyfit(t_data, profil_harian, orde_poly);
+% Iris data berdasarkan jendela waktu masing-masing
+t_pagi = t_data(idx_6:idx_14);       y_pagi = profil_harian(idx_6:idx_14);
+t_malam = t_data(idx_14:idx_22);     y_malam = profil_harian(idx_14:idx_22);
 
-% Proses Integrasi Simbolik 
-p_integrasi = [p_integral ./ (orde_poly+1:-1:1), 0];
+% Menggunakan polinomial derajat 3 (Kubik) secara lokal
+orde_poly = 3; 
 
-% Menghitung akumulasi eksak untuk Periode 1 (Pagi - Siang: 06.00 s.d 14.00)
-analitik_pagi = polyval(p_integrasi, t_pagi_selesai) - polyval(p_integrasi, t_pagi_mulai);
+% PERIODE PAGI - SIANG 
+% 1. Solusi Analitik Lokal (Orde 3)
+p_pagi = polyfit(t_pagi, y_pagi, orde_poly);
+p_int_pagi = [p_pagi ./ (orde_poly+1:-1:1), 0];
+analitik_pagi = polyval(p_int_pagi, 14) - polyval(p_int_pagi, 6);
 
-% Menghitung akumulasi eksak untuk Periode 2 (Siang - Malam: 14.00 s.d 22.00)
-analitik_malam = polyval(p_integrasi, t_malam_selesai) - polyval(p_integrasi, t_malam_mulai);
-
-% Menggunakan pemetaan kondisi logis untuk mencari indeks baris di dalam matriks
-idx_6 = find(t_data >= t_pagi_mulai, 1, 'first');
-idx_14 = find(t_data >= t_pagi_selesai, 1, 'first');
-idx_22 = find(t_data >= t_malam_selesai, 1, 'first');
-
-% A. Perhitungan Aturan Trapesium untuk Jendela Pagi-Siang
-t_pagi = t_data(idx_6:idx_14);       % Mengiris partisi waktu internal pagi
-y_pagi = profil_harian(idx_6:idx_14);% Mengiris nilai polutan koordinat Y
-N_pagi = length(t_pagi) - 1;         % Jumlah sub-interval partisi trapesium
-h_pagi = (t_pagi(end) - t_pagi(1)) / N_pagi; % Menghitung lebar langkah (step size h)
-% Implementasi Aturan Trapesium Komposisi: I = (h/2) * [y0 + 2*sum(y_i) + yN]
+% 2. Solusi Numerik (Trapezoid)
+N_pagi = length(t_pagi) - 1;
+h_pagi = (t_pagi(end) - t_pagi(1)) / N_pagi;
 numerik_pagi = (h_pagi / 2) * (y_pagi(1) + 2*sum(y_pagi(2:end-1)) + y_pagi(end));
 
-% B. Perhitungan Aturan Trapesium untuk Jendela Siang-Malam
-t_malam = t_data(idx_14:idx_22);       % Mengiris partisi waktu internal malam
-y_malam = profil_harian(idx_14:idx_22);% Mengiris nilai polutan koordinat Y
-N_malam = length(t_malam) - 1;         % Jumlah sub-interval partisi trapesium
-h_malam = (t_malam(end) - t_malam(1)) / N_malam; % Menghitung lebar langkah (step size h)
-% Implementasi Aturan Trapesium Komposisi
+
+% PERIODE SIANG - MALAM 
+% 1. Solusi Analitik Lokal (Orde 3)
+p_malam = polyfit(t_malam, y_malam, orde_poly);
+p_int_malam = [p_malam ./ (orde_poly+1:-1:1), 0];
+analitik_malam = polyval(p_int_malam, 22) - polyval(p_int_malam, 14);
+
+% 2. Solusi Numerik (Trapezoid)
+N_malam = length(t_malam) - 1;
+h_malam = (t_malam(end) - t_malam(1)) / N_malam;
 numerik_malam = (h_malam / 2) * (y_malam(1) + 2*sum(y_malam(2:end-1)) + y_malam(end));
 
-% Menghitung Galat Absolut: Nilai Mutlak dari |Solusi Analitik - Solusi Numerik|
+% PERHITUNGAN GALAT
 err_abs_pagi = abs(analitik_pagi - numerik_pagi);
-% Menghitung Galat Relatif dalam bentuk presentase terhadap Solusi Analitik Eksak
 err_rel_pagi = (err_abs_pagi / analitik_pagi) * 100;
-% Mengulangi perhitungan galat absolut dan relatif untuk sesi Siang-Malam
+
 err_abs_malam = abs(analitik_malam - numerik_malam);
 err_rel_malam = (err_abs_malam / analitik_malam) * 100;
 
-% Proses pencetakan data numerik akhir secara terstruktur 
-fprintf('\nHASIL INTEGRAL PAPARAN POLUTAN:\n');
+% PENCETAKAN DATA OUTPUT
+fprintf('\nBagian 6 Analisis Paparan Polusi Menggunakan Integral\n');
+fprintf('\nHASIL INTEGRAL PAPARAN POLUTAN (PIECEWISE POLY-%d):\n', orde_poly);
 fprintf('----------------------------------------------------------------\n');
 fprintf('Periode Pagi-Siang (06.00 - 14.00):\n');
-fprintf('   - Solusi Analitik (Poly-7)  : %.4f\n', analitik_pagi);
-fprintf('   - Solusi Numerik (Trapezoid): %.4f\n', numerik_pagi);
-fprintf('   - Galat Absolut             : %.4e\n', err_abs_pagi);
-fprintf('   - Galat Relatif             : %.4f%%\n', err_rel_pagi);
+fprintf('   - Solusi Analitik  : %.4f\n', analitik_pagi);
+fprintf('   - Solusi Numerik   : %.4f\n', numerik_pagi);
+fprintf('   - Galat Absolut    : %.4e\n', err_abs_pagi);
+fprintf('   - Galat Relatif    : %.4f%%\n', err_rel_pagi);
 fprintf('-----------------------------------------------------------------\n');
 fprintf('Periode Siang-Malam (14.00 - 22.00):\n');
-fprintf('   - Solusi Analitik (Poly-7)  : %.4f\n', analitik_malam);
-fprintf('   - Solusi Numerik (Trapezoid): %.4f\n', numerik_malam);
-fprintf('   - Galat Absolut             : %.4e\n', err_abs_malam);
-fprintf('   - Galat Relatif             : %.4f%%\n', err_rel_malam);
+fprintf('   - Solusi Analitik  : %.4f\n', analitik_malam);
+fprintf('   - Solusi Numerik   : %.4f\n', numerik_malam);
+fprintf('   - Galat Absolut    : %.4e\n', err_abs_malam);
+fprintf('   - Galat Relatif    : %.4f%%\n', err_rel_malam);
 fprintf('-----------------------------------------------------------------\n');
 
-% visualisasi grafik
-figure('Name', 'Analisis Integral Paparan Polutan', 'NumberTitle', 'off');
+%VISUALISASI GRAFIK 
+figure('Name', 'Analisis Integral Paparan Polutan Orde 3', 'NumberTitle', 'off');
 
-% Menggambar kurva kontinu beresolusi tinggi (500 titik) menggunakan koefisien polinomial
-t_mulus = linspace(0, 24, 500);
-y_mulus = polyval(p_integral, t_mulus);
-
-% Plotting data asli diskret beserta kurva matematikanya
+% Plot data asli dasar
 plot(t_data, profil_harian, 'k.', 'MarkerSize', 8, 'DisplayName', 'Data Rata-rata Polutan'); hold on;
-plot(t_mulus, y_mulus, 'k-', 'LineWidth', 1.5, 'DisplayName', 'Kurva Pendekatan f(t)');
 
-% Representasi Geometris Integral Sesi Pagi-Siang: Mewarnai area di bawah kurva dengan warna Hijau (g)
-t_fill_pagi = linspace(t_pagi_mulai, t_pagi_selesai, 100);
-y_fill_pagi = polyval(p_integral, t_fill_pagi);
-fill([t_fill_pagi, fliplr(t_fill_pagi)], [y_fill_pagi, zeros(1,100)], 'g', ...
-    'FaceAlpha', 0.3, 'DisplayName', sprintf('Pagi-Siang (Num: %.2f)', numerik_pagi));
+% Membuat resolusi tinggi untuk penggambaran kurva segmen kubik
+t_mulus_pagi = linspace(6, 14, 100);
+y_mulus_pagi = polyval(p_pagi, t_mulus_pagi);
 
-% Representasi Geometris Integral Sesi Siang-Malam: Mewarnai area di bawah kurva dengan warna Merah (r)
-t_fill_malam = linspace(t_malam_mulai, t_malam_selesai, 100);
-y_fill_malam = polyval(p_integral, t_fill_malam);
-fill([t_fill_malam, fliplr(t_fill_malam)], [y_fill_malam, zeros(1,100)], 'r', ...
-    'FaceAlpha', 0.3, 'DisplayName', sprintf('Siang-Malam (Num: %.2f)', numerik_malam));
+t_mulus_malam = linspace(14, 22, 100);
+y_mulus_malam = polyval(p_malam, t_mulus_malam);
 
-% Konfigurasi pelabelan aksis dan plot grafik ilmiah
-title('Perbandingan Total Paparan Polutan berdasarkan Interval Waktu');
+% Plot Kurva Pendekatan Matematika per segmen (Orde 3)
+plot(t_mulus_pagi, y_mulus_pagi, 'g-', 'LineWidth', 2, 'DisplayName', 'Model f(t) Pagi-Siang (Poly-3)');
+plot(t_mulus_malam, y_mulus_malam, 'r-', 'LineWidth', 2, 'DisplayName', 'Model f(t) Siang-Malam (Poly-3)');
+
+% Mewarnai daerah luas bawah kurva (Representasi Geometris Integral)
+fill([t_mulus_pagi, fliplr(t_mulus_pagi)], [y_mulus_pagi, zeros(1,100)], 'g', ...
+    'FaceAlpha', 0.25, 'DisplayName', sprintf('Area Pagi-Siang (Num: %.2f)', numerik_pagi));
+
+fill([t_mulus_malam, fliplr(t_mulus_malam)], [y_mulus_malam, zeros(1,100)], 'r', ...
+    'FaceAlpha', 0.25, 'DisplayName', sprintf('Area Siang-Malam (Num: %.2f)', numerik_malam));
+
+% Konfigurasi Tampilan
+title('Perbandingan Total Paparan Polutan Berdasarkan Interval Sesi Waktu (Orde 3)');
 xlabel('Jam (Waktu) dalam 24 Jam');
 ylabel('Konsentrasi Polutan');
 xlim([0 24]);
-xticks(0:2:24); % Membuat penanda waktu berjarak kelipatan 2 jam
+xticks(0:2:24); 
 grid on;
 legend('Location', 'best');
 
@@ -632,7 +630,7 @@ ylabel('Energi Kumulatif (%)');
 title('Energi Kumulatif SVD');
 grid on;
 
-fprintf('\nKESIMPULAN SEMENTARA:\n');
+fprintf('\nKESIMPULAN:\n');
 
 if mean_err_taylor7 < mean_err_taylor5 && mean_err_taylor5 < mean_err_taylor3
     fprintf('- Orde Taylor yang lebih tinggi menghasilkan galat yang lebih kecil.\n');
